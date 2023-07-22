@@ -100,6 +100,8 @@ func getIPs(domain string) []IP {
 	log.Println("looking for IP")
 	result := make([]IP, 0)
 	if ips, err := lookupA(domain); err != nil {
+		log.Printf("lookup failed. %s\n", err.Error())
+	} else {
 		for _, ip := range ips {
 			isIPv4 := strings.Contains(ip, ".")
 			if isIPv4 {
