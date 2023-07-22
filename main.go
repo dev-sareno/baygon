@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -52,38 +54,84 @@ func main() {
 	file, err := os.Open(targetPath)
 	if err != nil {
 		// maybe access denied?
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 	defer file.Close()
+
+	outFile := makeOutputPath()
+	defer outFile.Close()
+
+	{ // write mermaid header
+		mermaidHeader := make([]string, 0)
+		mermaidHeader = append(mermaidHeader, "```mermaid")
+		mermaidHeader = append(mermaidHeader, "flowchart LR")
+		mermaidHeader = append(mermaidHeader, "")
+		if _, err := outFile.WriteString(strings.Join(mermaidHeader, "\n")); err != nil {
+			log.Fatalf("unable to write to output file. %s", err.Error())
+		}
+	}
 
 	scanner := bufio.NewScanner(file)
 	// optionally, resize scanner's capacity for lines over 64K, see next example
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.TrimSpace(line) != "" {
-			handle(line)
+			mermaidText := handle(strings.TrimSpace(line))
+			mermaidText = fmt.Sprintf("%s\n", mermaidText) // add new line
+			if _, err := outFile.WriteString(mermaidText); err != nil {
+				log.Fatalf("unable to write to output file. %s", err.Error())
+			}
+		}
+	}
+
+	{ // write mermaid footer
+		mermaidFooter := make([]string, 0)
+		mermaidFooter = append(mermaidFooter, "")
+		mermaidFooter = append(mermaidFooter, "```")
+		mermaidFooter = append(mermaidFooter, "")
+		if _, err := outFile.WriteString(strings.Join(mermaidFooter, "\n")); err != nil {
+			log.Fatalf("unable to write to output file. %s", err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 }
 
-func handle(domain string) {
+func makeOutputPath() *os.File {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	outputPath := fmt.Sprintf("%s/%s", cwd, "OUTPUT.md")
+	log.Println(outputPath)
+	file, err := os.Create(outputPath)
+	if err != nil {
+		log.Fatalf("failed to create output file. %s\n", err.Error())
+	} else if file == nil {
+		log.Fatalln("failed to create output file. error: file is nil")
+	}
+	return file
+}
+
+func handle(domain string) string {
 	log.Printf("lookup: %s\n", domain)
 
 	// CNAME first
 	var cname *CNAME = nil
-	if v, err := lookupCNAME(domain); err != nil {
+	if v, err := lookupCNAME(domain); err == nil {
 		// CNAME found
 		log.Printf("CNAME found %s\n", v)
 
-		// resolve IPs
-		ips := getIPs(cname.Value)
+		// check if identical
+		if !strings.HasPrefix(v, domain) {
+			// create CNAME
+			cname = &CNAME{v, make([]IP, 0)}
 
-		// create CNAME
-		cname = &CNAME{v, ips}
+			// resolve IPs
+			cname.IPs = getIPs(cname.Value)
+		}
 	}
 
 	// then IP
@@ -93,7 +141,8 @@ func handle(domain string) {
 	nodes := createNodeChain(domain, ips, cname)
 
 	// generate Mermaid output
-	GenerateOutput(nodes)
+	mermaidText := GenerateOutput(nodes)
+	return mermaidText
 }
 
 func getIPs(domain string) []IP {
@@ -121,11 +170,8 @@ func createNodeChain(domain string, ips []IP, cname *CNAME) []Node {
 	// node: domain
 	result = append(result, Node{domain})
 
-	if cname != nil {
+	if cname != nil && len(cname.IPs) > 0 {
 		// resolves to CNAME
-
-		// node: CNAME
-		result = append(result, Node{cname.Value})
 
 		// node: IP
 		cnameResolvesTo := createNodeChain(cname.Value, cname.IPs, nil)
@@ -137,7 +183,7 @@ func createNodeChain(domain string, ips []IP, cname *CNAME) []Node {
 		for _, ip := range ips {
 			v = append(v, ip.Value)
 		}
-		text := strings.Join(v, "\n")
+		text := strings.Join(v, "<br/>")
 		result = append(result, Node{text})
 	}
 	return result
@@ -169,8 +215,19 @@ func lookupA(domain string) ([]string, error) {
 	return returnArr, nil
 }
 
-func GenerateOutput(nodes []Node) {
+func GenerateOutput(nodes []Node) string {
+	mermaid := make([]string, 0)
 	for _, node := range nodes {
-		log.Println(node)
+		// use hash value as ID
+		h := sha1.New()
+		if _, err := h.Write([]byte(node.Text)); err != nil {
+			log.Printf("failed to create hash. %s\n", err.Error())
+			continue
+		}
+		sha1Hash := hex.EncodeToString(h.Sum(nil))
+		nodeText := fmt.Sprintf("%s[%s]", sha1Hash, node.Text)
+		mermaid = append(mermaid, nodeText)
 	}
+	mermaidText := strings.Join(mermaid, " --> ")
+	return mermaidText
 }
