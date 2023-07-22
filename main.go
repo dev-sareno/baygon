@@ -10,6 +10,20 @@ import (
 	"strings"
 )
 
+type IP struct {
+	Value  string
+	IsIPv4 bool
+}
+
+type CNAME struct {
+	Value string
+	IPs   []IP
+}
+
+type Node struct {
+	Text string
+}
+
 func main() {
 	var targetPath string
 	{ // validate arguments
@@ -57,11 +71,74 @@ func main() {
 }
 
 func handle(domain string) {
-	cname, _ := lookupCNAME(domain)
-	fmt.Println(cname)
+	log.Printf("lookup: %s\n", domain)
 
-	a, _ := lookupA(domain)
-	fmt.Println(a)
+	// CNAME first
+	var cname *CNAME = nil
+	if v, err := lookupCNAME(domain); err != nil {
+		// CNAME found
+		log.Printf("CNAME found %s\n", v)
+
+		// resolve IPs
+		ips := getIPs(cname.Value)
+
+		// create CNAME
+		cname = &CNAME{v, ips}
+	}
+
+	// then IP
+	ips := getIPs(domain)
+
+	// create nodes
+	nodes := createNodeChain(domain, ips, cname)
+
+	// generate Mermaid output
+	GenerateOutput(nodes)
+}
+
+func getIPs(domain string) []IP {
+	log.Println("looking for IP")
+	result := make([]IP, 0)
+	if ips, err := lookupA(domain); err != nil {
+		for _, ip := range ips {
+			isIPv4 := strings.Contains(ip, ".")
+			if isIPv4 {
+				log.Printf("IPv4 found %s\n", ip)
+			} else {
+				log.Printf("IPv6 found %s\n", ip)
+			}
+			result = append(result, IP{ip, isIPv4})
+		}
+	}
+	return result
+}
+
+func createNodeChain(domain string, ips []IP, cname *CNAME) []Node {
+	var result []Node
+
+	// node: domain
+	result = append(result, Node{domain})
+
+	if cname != nil {
+		// resolves to CNAME
+
+		// node: CNAME
+		result = append(result, Node{cname.Value})
+
+		// node: IP
+		cnameResolvesTo := createNodeChain(cname.Value, cname.IPs, nil)
+		result = append(result, cnameResolvesTo...)
+	} else if len(ips) > 0 {
+		// resolves to A/AAAA
+		// node: IP
+		var v []string
+		for _, ip := range ips {
+			v = append(v, ip.Value)
+		}
+		text := strings.Join(v, "\n")
+		result = append(result, Node{text})
+	}
+	return result
 }
 
 func lookupCNAME(domain string) (string, error) {
@@ -88,4 +165,10 @@ func lookupA(domain string) ([]string, error) {
 		returnArr = append(returnArr, v.String())
 	}
 	return returnArr, nil
+}
+
+func GenerateOutput(nodes []Node) {
+	for _, node := range nodes {
+		log.Println(node)
+	}
 }
