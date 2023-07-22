@@ -52,7 +52,7 @@ func main() {
 	file, err := os.Open(targetPath)
 	if err != nil {
 		// maybe access denied?
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 	defer file.Close()
 
