@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -151,6 +152,9 @@ func getIPs(domain string) []IP {
 	if ips, err := lookupA(domain); err != nil {
 		log.Printf("lookup failed. %s\n", err.Error())
 	} else {
+		sort.Slice(ips, func(i, j int) bool {
+			return ips[i] > ips[j] // sort ascending
+		})
 		for _, ip := range ips {
 			isIPv4 := strings.Contains(ip, ".")
 			if isIPv4 {
