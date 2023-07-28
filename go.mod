@@ -1,4 +1,4 @@
-module github.com/dev-sareno/tomthemonkey
+module github.com/dev-sareno/ginamus
 
 go 1.20
 

@@ -1,4 +1,4 @@
-package main
+package mhtml
 
 func GetMainPage() string {
 	return `
