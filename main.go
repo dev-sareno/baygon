@@ -28,28 +28,11 @@ type Node struct {
 }
 
 func main() {
-	var targetPath string
-	{ // validate arguments
-		args := os.Args
-		idx := -1
-		for i, arg := range args {
-			if arg == "-f" || arg == "--file" {
-				idx = i
-				break
-			}
-		}
-		fileArgIsValid := idx != -1 && len(args) > (idx+1)
-		if fileArgIsValid {
-			// check if file exists
-			fileArgValue := args[idx+1]
-			if _, err := os.Stat(fileArgValue); errors.Is(err, os.ErrNotExist) {
-				// file not found
-				log.Fatalf(err.Error())
-			}
-			targetPath = fileArgValue
-		} else {
-			log.Fatalln("Argument missing --file/-f")
-		}
+	// validate arguments
+	args := parseArgs()
+	targetPath := args["--file"]
+	if exists := isFileExists(targetPath); !exists {
+		log.Fatalln("Argument --file is required")
 	}
 
 	file, err := os.Open(targetPath)
@@ -98,6 +81,30 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err.Error())
 	}
+}
+
+func parseArgs() map[string]string {
+	keypair := make(map[string]string, 0)
+	lastKey := ""
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "--") || strings.HasPrefix(arg, "-") {
+			keypair[arg] = ""
+			lastKey = arg
+		} else {
+			if lastKey != "" {
+				keypair[lastKey] = arg
+			}
+		}
+	}
+	return keypair
+}
+
+func isFileExists(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		// file not found
+		return false
+	}
+	return true
 }
 
 func makeOutputPath() *os.File {
