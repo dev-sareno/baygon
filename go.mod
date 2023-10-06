@@ -1,3 +1,3 @@
-module github.com/dev-sareno/tomthemonkey
+module hakdug
 
 go 1.20
