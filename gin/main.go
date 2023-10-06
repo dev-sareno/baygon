@@ -32,6 +32,7 @@ func main() {
 	}()
 
 	db.Init()
+	db.CreateJob([]string{"www.google.com", "www.example.com", "yahoo.com"})
 
 	// init Gin web server
 	r := gin.Default()
