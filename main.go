@@ -229,7 +229,8 @@ func GenerateOutput(nodes []Node) string {
 			continue
 		}
 		sha1Hash := hex.EncodeToString(h.Sum(nil))
-		nodeText := fmt.Sprintf("%s[%s]", sha1Hash, node.Text)
+		shortSha1Hash := sha1Hash[:5]
+		nodeText := fmt.Sprintf("%s[%s]", shortSha1Hash, node.Text)
 		mermaid = append(mermaid, nodeText)
 	}
 	mermaidText := strings.Join(mermaid, " --> ")
