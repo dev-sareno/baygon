@@ -31,32 +31,40 @@ invalid.sareno.dev
 argocd.sareno.dev
 grafana-demo.sareno.dev
 EOT
-$ ./ginamus --file domains.txt
+# extra
+$ cat <<EOF > extra.txt
+162.55.171.98 --> MyProject
+EOF
+$ ./ginamus --file domains.txt --extra extra.txt
 ```
 you will get the following content for `OUTPUT.md`:
 ```
 flowchart LR
 c2208[github.com] --> bbe27[20.205.243.166]
 a2999[www.github.com] --> 675f6[github.com.] --> bbe27[20.205.243.166]
-d8b99[www.google.com] --> cb7e1[2404:6800:4017:802::2004<br/>142.251.220.164]
+d8b99[www.google.com] --> 48e9e[2404:6800:4017:803::2004<br/>142.251.221.36]
 0caaf[example.com] --> 97d24[93.184.216.34<br/>2606:2800:220:1:248:1893:25c8:1946]
 06850[www.example.com] --> 97d24[93.184.216.34<br/>2606:2800:220:1:248:1893:25c8:1946]
 fc57c[eladiojr.sareno.dev] --> da973[eladiojrsareno.github.io.] --> 0ed1b[2606:50c0:8003::153<br/>2606:50c0:8002::153<br/>2606:50c0:8001::153<br/>2606:50c0:8000::153<br/>185.199.111.153<br/>185.199.110.153<br/>185.199.109.153<br/>185.199.108.153]
 39f8f[invalid.sareno.dev]
 ba272[argocd.sareno.dev] --> 22449[162.55.171.98]
+22449[162.55.171.98] --> b3295[MyProject]
 a6d6c[grafana-demo.sareno.dev] --> 22449[162.55.171.98]
+22449[162.55.171.98] --> b3295[MyProject]
 ```
 and if you preview it, you'll get the following Mermaid diagram:
 ```mermaid
 flowchart LR
 c2208[github.com] --> bbe27[20.205.243.166]
 a2999[www.github.com] --> 675f6[github.com.] --> bbe27[20.205.243.166]
-d8b99[www.google.com] --> cb7e1[2404:6800:4017:802::2004<br/>142.251.220.164]
+d8b99[www.google.com] --> 48e9e[2404:6800:4017:803::2004<br/>142.251.221.36]
 0caaf[example.com] --> 97d24[93.184.216.34<br/>2606:2800:220:1:248:1893:25c8:1946]
 06850[www.example.com] --> 97d24[93.184.216.34<br/>2606:2800:220:1:248:1893:25c8:1946]
 fc57c[eladiojr.sareno.dev] --> da973[eladiojrsareno.github.io.] --> 0ed1b[2606:50c0:8003::153<br/>2606:50c0:8002::153<br/>2606:50c0:8001::153<br/>2606:50c0:8000::153<br/>185.199.111.153<br/>185.199.110.153<br/>185.199.109.153<br/>185.199.108.153]
 39f8f[invalid.sareno.dev]
 ba272[argocd.sareno.dev] --> 22449[162.55.171.98]
+22449[162.55.171.98] --> b3295[MyProject]
 a6d6c[grafana-demo.sareno.dev] --> 22449[162.55.171.98]
+22449[162.55.171.98] --> b3295[MyProject]
 ```
 
