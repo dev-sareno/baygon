@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/dev-sareno/ginamus/gin/db"
 	"github.com/dev-sareno/ginamus/gin/handler"
 	"github.com/dev-sareno/ginamus/gin/mq"
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,8 @@ func main() {
 			os.Exit(1)
 		}
 	}()
+
+	db.Init()
 
 	// init Gin web server
 	r := gin.Default()
