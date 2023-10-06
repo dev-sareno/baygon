@@ -79,11 +79,12 @@ func main() {
 	}
 
 	scanner := bufio.NewScanner(file)
-	// optionally, resize scanner's capacity for lines over 64K, see next example
+	// read by line
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.TrimSpace(line) != "" {
-			mermaidText := handle(strings.TrimSpace(line))
+		line = strings.TrimSpace(line)
+		if line != "" {
+			mermaidText := handle(line)
 			mermaidText = fmt.Sprintf("%s\n", mermaidText) // add new line
 			if _, err := outFile.WriteString(mermaidText); err != nil {
 				log.Fatalf("unable to write to output file. %s", err.Error())
@@ -140,6 +141,31 @@ func parseExtras(extraPath string) error {
 	}
 
 	return nil
+}
+
+func sentenceToMermaid(sentence Sentence) string {
+	var items []string
+	for _, word := range sentence.Words {
+		h := getShortHash(word.Text)
+		items = append(items, fmt.Sprintf("%s[%s]", h, word.Text))
+	}
+	return strings.Join(items, " --> ")
+}
+
+func getExtras(item string) string {
+	log.Printf("handling extras for %s\n", item)
+	var result []string
+	for _, sentence := range paragraph {
+		for _, word := range sentence.Words {
+			log.Printf("%s == %s\n", item, word.Text)
+			if item == word.Text {
+				mrmd := sentenceToMermaid(sentence)
+				result = append(result, mrmd)
+				continue
+			}
+		}
+	}
+	return strings.Join(result, "\n")
 }
 
 func parseArgs() map[string]string {
@@ -288,17 +314,28 @@ func lookupA(domain string) ([]string, error) {
 func GenerateOutput(nodes []Node) string {
 	mermaid := make([]string, 0)
 	for _, node := range nodes {
-		// use hash value as ID
-		h := sha1.New()
-		if _, err := h.Write([]byte(node.Text)); err != nil {
-			log.Printf("failed to create hash. %s\n", err.Error())
-			continue
-		}
-		sha1Hash := hex.EncodeToString(h.Sum(nil))
-		shortSha1Hash := sha1Hash[:5]
-		nodeText := fmt.Sprintf("%s[%s]", shortSha1Hash, node.Text)
+		nodeText := fmt.Sprintf("%s[%s]", getShortHash(node.Text), node.Text)
 		mermaid = append(mermaid, nodeText)
 	}
 	mermaidText := strings.Join(mermaid, " --> ")
+
+	// get IP (last item)
+	ip := nodes[len(nodes)-1]
+	// get extras
+	if extras := getExtras(ip.Text); strings.TrimSpace(extras) != "" {
+		log.Printf("extras found: %s\n", extras)
+		mermaidText += fmt.Sprintf("\n%s", extras) // append extras
+	}
+
 	return mermaidText
+}
+
+func getShortHash(v string) string {
+	h := sha1.New()
+	if _, err := h.Write([]byte(v)); err != nil {
+		log.Printf("failed to create hash. %s\n", err.Error())
+		return "" // return empty string
+	}
+	sha1Hash := hex.EncodeToString(h.Sum(nil))
+	return sha1Hash[:5]
 }
