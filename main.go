@@ -27,6 +27,16 @@ type Node struct {
 	Text string
 }
 
+type Word struct {
+	Text string
+}
+
+type Sentence struct {
+	Words []Word
+}
+
+var paragraph []Sentence
+
 func main() {
 	// validate arguments
 	args := parseArgs()
@@ -35,10 +45,23 @@ func main() {
 		log.Fatalln("Argument --file is required")
 	}
 
+	extra := args["--extra"]
+	if strings.TrimSpace(extra) != "" {
+		if exists := isFileExists(extra); !exists {
+			log.Fatalf("File not found %s", extra)
+		}
+	}
+
+	// fail-fast; parse extras first
+	if err := parseExtras(extra); err != nil {
+		log.Fatalf("Unable to parse extras %s", err.Error())
+	}
+
 	file, err := os.Open(targetPath)
 	if err != nil {
 		// maybe access denied?
-		log.Fatal(err.Error())
+		log.Println(err.Error())
+		return
 	}
 	defer file.Close()
 
@@ -81,6 +104,42 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err.Error())
 	}
+}
+
+func parseExtras(extraPath string) error {
+	file, err := os.Open(extraPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Example value per line:
+	// 111.222.333.444 --> i-09090cfea --> myproject
+
+	scanner := bufio.NewScanner(file)
+
+	_paragraph := make([]Sentence, 0)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "" || !strings.Contains(line, " --> ") {
+			continue
+		}
+
+		_sentence := make([]Word, 0)
+		parts := strings.Split(line, " --> ")
+		for _, part := range parts {
+			_sentence = append(_sentence, Word{part})
+		}
+		_paragraph = append(_paragraph, Sentence{_sentence})
+	}
+
+	paragraph = _paragraph
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return nil
 }
 
 func parseArgs() map[string]string {
