@@ -31,15 +31,21 @@ func Run() {
 		}
 	}()
 
-	q, err := ch.QueueDeclare(
-		"jobs", // name
-		false,  // durable
-		false,  // delete when unused
-		false,  // exclusive
-		false,  // no-wait
-		nil,    // arguments
-	)
-	mq.FailOnError(err, "Failed to declare a queue")
+	var q *amqp.Queue
+	lt := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
+	switch lt {
+	case "A":
+		log.Println("worker mode for lookup A")
+		q = mq.GetLookupAQueue(ch)
+		break
+	case "CNAME":
+		log.Println("worker mode for lookup CNAME")
+		q = mq.GetLookupCnameQueue(ch)
+		break
+	default:
+		log.Printf("unsupported lookup type %s\n", lt)
+		return
+	}
 
 	msgs, err := ch.Consume(
 		q.Name, // queue
@@ -50,7 +56,10 @@ func Run() {
 		false,  // no-wait
 		nil,    // args
 	)
-	mq.FailOnError(err, "Failed to register a consumer")
+	if err != nil {
+		log.Println("failed to register a consumer")
+		return
+	}
 
 	var forever chan struct{}
 

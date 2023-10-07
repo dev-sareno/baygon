@@ -41,14 +41,22 @@ func GetChannel() (*amqp.Channel, func(), bool) {
 	}, true
 }
 
+func GetLookupAQueue(ch *amqp.Channel) *amqp.Queue {
+	return getQueue(ch, "lookup-a")
+}
+
+func GetLookupCnameQueue(ch *amqp.Channel) *amqp.Queue {
+	return getQueue(ch, "lookup-cname")
+}
+
 func PublishToLookupA(ch *amqp.Channel, job *dto.Job) bool {
-	q := getQueue(ch, "lookup-a")
+	q := GetLookupAQueue(ch)
 	encodedJob := codec.Encode(job)
 	return publish(ch, q.Name, encodedJob)
 }
 
 func PublishToLookupCname(ch *amqp.Channel, job *dto.Job) bool {
-	q := getQueue(ch, "lookup-cname")
+	q := GetLookupCnameQueue(ch)
 	encodedJob := codec.Encode(job)
 	return publish(ch, q.Name, encodedJob)
 }
