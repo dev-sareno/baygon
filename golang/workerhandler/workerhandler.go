@@ -51,7 +51,13 @@ func handleDnsResolution(ctx *context.WorkerContext) {
 	case "CNAME":
 		const activityId = "lookup-cname"
 		resolver := dns.CnameResolver{Child: &dns.EmptyResolver{}}
-		_ = Lookup(ctx, activityId, &resolver)
+		job := Lookup(ctx, activityId, &resolver)
+
+		// update database
+		if ok := db.UpdateJob(job); !ok {
+			return
+		}
+
 		// done. cname lookup is the end of lookup
 		break
 	default:
