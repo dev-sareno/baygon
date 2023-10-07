@@ -35,19 +35,6 @@ func HandleJob(ctx *context.WorkerContext, data []byte) {
 func handleDnsResolution(ctx *context.WorkerContext) {
 	lookupType := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
 	switch lookupType {
-	case "A":
-		const activityId = "lookup-a"
-		resolver := dns.IpResolver{}
-		job := Lookup(ctx, activityId, &resolver)
-
-		// update database
-		if ok := db.UpdateJob(job); !ok {
-			return
-		}
-
-		// move job to lookup cname
-		mq.PublishToLookupCname(ctx.MqChannel, job)
-		break
 	case "CNAME":
 		const activityId = "lookup-cname"
 		resolver := dns.CnameResolver{Child: &dns.EmptyResolver{}}
@@ -58,7 +45,20 @@ func handleDnsResolution(ctx *context.WorkerContext) {
 			return
 		}
 
-		// done. cname lookup is the end of lookup
+		// move job to lookup A
+		mq.PublishToLookupA(ctx.MqChannel, job)
+		break
+	case "A":
+		const activityId = "lookup-a"
+		resolver := dns.IpResolver{}
+		job := Lookup(ctx, activityId, &resolver)
+
+		// update database
+		if ok := db.UpdateJob(job); !ok {
+			return
+		}
+
+		// done. A lookup is the end of lookup
 		break
 	default:
 		log.Printf("invalid dns lookup type %s\n", lookupType)

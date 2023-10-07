@@ -32,7 +32,7 @@ func Post(c *gin.Context, ch *amqp.Channel) {
 	}
 
 	// publish job to mq
-	if ok := mq.PublishToLookupA(ch, &job); !ok {
+	if ok := mq.PublishToLookupCname(ch, &job); !ok {
 		c.String(http.StatusInternalServerError, fmt.Sprint("Server error. Unable to publish job to mq"))
 		return
 	}
