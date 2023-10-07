@@ -6,11 +6,12 @@ import (
 	"github.com/dev-sareno/ginamus/dto"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
+	"os"
 )
 
 func GetChannel() (*amqp.Channel, func(), bool) {
 	// setup RabbitMQ
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial(os.Getenv("RMQ_URL"))
 	if err != nil {
 		log.Printf("failed to connect to RabbitMQ. %s\n", err)
 		return nil, func() {}, false
