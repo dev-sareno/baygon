@@ -6,6 +6,7 @@ import (
 	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/dns"
 	"github.com/dev-sareno/ginamus/dto"
+	"github.com/dev-sareno/ginamus/mq"
 	"log"
 	"os"
 	"strings"
@@ -34,10 +35,18 @@ func handleDnsResolution(ctx *context.WorkerContext) {
 	lookupType := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
 	switch lookupType {
 	case "A":
-		lookupA(ctx)
+		const activityId = "lookup-a"
+		resolver := dns.IpResolver{}
+		job := Lookup(ctx, activityId, &resolver)
+
+		// move job to lookup cname
+		mq.PublishToLookupCname(ctx.MqChannel, job)
 		break
 	case "CNAME":
-		lookupCname(ctx)
+		const activityId = "lookup-cname"
+		resolver := dns.CnameResolver{Child: &dns.EmptyResolver{}}
+		_ = Lookup(ctx, activityId, &resolver)
+		// done. cname lookup is the end of lookup
 		break
 	default:
 		log.Printf("invalid dns lookup type %s\n", lookupType)

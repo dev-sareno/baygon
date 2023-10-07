@@ -6,13 +6,10 @@ import (
 	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/dns"
 	"github.com/dev-sareno/ginamus/dto"
-	"github.com/dev-sareno/ginamus/mq"
 	"log"
 )
 
-func lookupA(ctx *context.WorkerContext) {
-	const activityId = "lookup-a"
-
+func Lookup(ctx *context.WorkerContext, activityId string, resolver dns.DnsResolver) *dto.Job {
 	job := ctx.Job
 	job.LastActivityId = activityId // set activity id
 
@@ -26,35 +23,29 @@ func lookupA(ctx *context.WorkerContext) {
 		Message: job.LastActivityMessage,
 	}
 	var lookupResult []string // list of the resolved values
-	hasWarning := false
 	hasError := false
 	for _, v := range jobInput.Domains {
-		lookup := dns.IpResolver{}
-		lookup.SetValue(v)
-		result, err := lookup.Resolve()
+		resolver.SetValue(v)
+		result, err := resolver.Resolve()
 		if err != nil {
 			// lookup failed
-			log.Printf("a lookup failed. %s\n", err)
+			log.Printf("lookup failed. %s\n", err)
 			lookupResult = append(lookupResult, "") // append empty
 			hasError = true
 		} else {
 			// lookup successful
-			// ipv4 lookup is expected length of one since it  doesn't have a child
-			if len(result) != 1 {
-				log.Println("WARNING: ipresolver is expected to return a length of 1")
-				// this is invalid, consider as failed
+			if len(result) > 0 {
+				first := result[0] // length is always 1
+				lookupResult = append(lookupResult, first.Value)
+			} else {
+				// value not found
 				lookupResult = append(lookupResult, "") // append empty
-				hasWarning = true
-				continue
 			}
-			lookupResult = append(lookupResult, result[0].Value)
 		}
 	}
 
 	var msg string
-	if hasWarning {
-		msg = "completed with warning"
-	} else if hasError {
+	if hasError {
 		msg = "completed with errors"
 	} else {
 		msg = "completed"
@@ -74,6 +65,5 @@ func lookupA(ctx *context.WorkerContext) {
 
 	codec.Encode(job)
 
-	// move job to lookup cname
-	mq.PublishToLookupCname(ctx.MqChannel, job)
+	return ctx.Job
 }
