@@ -1,4 +1,4 @@
-package webworker
+package worker
 
 import (
 	"fmt"
