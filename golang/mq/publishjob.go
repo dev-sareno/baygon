@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-func getQueue(ch *amqp.Channel) *amqp.Queue {
+func getQueue(ch *amqp.Channel, queueName string) *amqp.Queue {
 	q, err := ch.QueueDeclare(
-		"jobs", // name
-		false,  // durable
-		false,  // delete when unused
-		false,  // exclusive
-		false,  // no-wait
-		nil,    // arguments
+		queueName, // name
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	if err != nil {
 		log.Println("failed to declare a queue")
@@ -25,26 +25,35 @@ func getQueue(ch *amqp.Channel) *amqp.Queue {
 	return &q
 }
 
-func PublishJob(ch *amqp.Channel, job *dto.Job) bool {
-	q := getQueue(ch)
-
+func publish(ch *amqp.Channel, queueName string, data string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	encodedJob := codec.Encode(job)
 	err := ch.PublishWithContext(ctx,
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
+		"",        // exchange
+		queueName, // routing key
+		false,     // mandatory
+		false,     // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        []byte(encodedJob),
+			Body:        []byte(data),
 		})
 	if err != nil {
 		log.Println("failed to publish a message")
 		return false
 	}
-	log.Printf(" [x] Sent %s\n", encodedJob)
+	log.Printf(" [x] Sent %s\n", data)
 	return true
+}
+
+func PublishToLookupA(ch *amqp.Channel, job *dto.Job) bool {
+	q := getQueue(ch, "lookup-a")
+	encodedJob := codec.Encode(job)
+	return publish(ch, q.Name, encodedJob)
+}
+
+func PublishToLookupCname(ch *amqp.Channel, job *dto.Job) bool {
+	q := getQueue(ch, "lookup-cname")
+	encodedJob := codec.Encode(job)
+	return publish(ch, q.Name, encodedJob)
 }
