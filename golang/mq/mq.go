@@ -8,12 +8,6 @@ import (
 	"log"
 )
 
-func FailOnError(err error, msg string) {
-	if err != nil {
-		log.Panicf("%s: %s", msg, err)
-	}
-}
-
 func GetChannel() (*amqp.Channel, func(), bool) {
 	// setup RabbitMQ
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")

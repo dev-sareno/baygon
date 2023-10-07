@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"fmt"
 	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/db"
 	"github.com/dev-sareno/ginamus/mq"
@@ -12,24 +11,12 @@ import (
 )
 
 func Run() {
-	// setup RabbitMQ
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	mq.FailOnError(err, "Failed to connect to RabbitMQ")
-	defer func() {
-		if err := conn.Close(); err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-	}()
-
-	ch, err := conn.Channel()
-	mq.FailOnError(err, "Failed to open a channel")
-	defer func() {
-		if err := ch.Close(); err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-	}()
+	ch, mqClose, ok := mq.GetChannel()
+	if !ok {
+		log.Println("failed to connect to RabbitMQ.")
+		return
+	}
+	defer mqClose()
 
 	var q *amqp.Queue
 	lt := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
