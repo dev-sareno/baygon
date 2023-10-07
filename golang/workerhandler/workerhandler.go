@@ -1,8 +1,10 @@
 package workerhandler
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/dev-sareno/ginamus/dns"
+	"github.com/dev-sareno/ginamus/dto"
 	"log"
 	"os"
 	"strings"
@@ -10,6 +12,14 @@ import (
 
 func HandleJob(data []byte) error {
 	log.Printf("Received a message: %s", data)
+	var job dto.Job
+	if err := json.Unmarshal(data, &job); err != nil {
+		return fmt.Errorf("invalid job input %s", err)
+	}
+	if job.Data.Type != 0 {
+		log.Printf("unsuported job type %d\n", job.Data.Type)
+		return nil
+	}
 	return nil
 }
 
