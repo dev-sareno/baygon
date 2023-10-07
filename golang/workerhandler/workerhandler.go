@@ -2,7 +2,6 @@ package workerhandler
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/db"
 	"github.com/dev-sareno/ginamus/dns"
@@ -10,7 +9,6 @@ import (
 	"github.com/dev-sareno/ginamus/mq"
 	"log"
 	"os"
-	"strings"
 )
 
 func HandleJob(ctx *context.WorkerContext, data []byte) {
@@ -63,23 +61,4 @@ func handleDnsResolution(ctx *context.WorkerContext) {
 	default:
 		log.Printf("invalid dns lookup type %s\n", lookupType)
 	}
-}
-
-func test() {
-	domain := "github.com"
-
-	ipResolver := dns.IpResolver{}
-	cnameResolver := dns.CnameResolver{Child: &ipResolver}
-	recordResolver := dns.RecordResolver{Child: &cnameResolver}
-	recordResolver.SetValue(domain)
-	result, err := recordResolver.Resolve()
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	var items []string
-	for _, item := range result {
-		items = append(items, item.Value)
-	}
-	fmt.Printf("%v\n", strings.Join(items, "\n"))
 }
