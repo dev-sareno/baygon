@@ -2,11 +2,13 @@ package webhandler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/dev-sareno/ginamus/codec"
 	"github.com/dev-sareno/ginamus/db"
+	"github.com/dev-sareno/ginamus/dto"
 	"github.com/dev-sareno/ginamus/mq"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
@@ -27,11 +29,21 @@ func Post(c *gin.Context, ch *amqp091.Channel) {
 
 	fmt.Println(body.Domains)
 
-	d, err := json.Marshal(&body.Domains)
-	if err != nil {
-		c.String(http.StatusInternalServerError, fmt.Sprintf("Server error %s", err))
-		return
+	// create job
+	job := dto.Job{
+		ID:        uuid.New().String(),
+		CreatedAt: time.Now().Format(time.RFC3339),
+		Data: dto.JobData{
+			Type: 0,
+			Input: dto.JobInput{
+				Domains: body.Domains,
+				Filler:  [][]string{},
+			},
+			Outputs: []dto.ActivityOutput{},
+		},
 	}
+
+	encodedJob := codec.Encode(&job)
 
 	if err := db.CreateJob(body.Domains); err != nil {
 		c.String(http.StatusInternalServerError, fmt.Sprintf("Server error %s", err))
@@ -51,7 +63,6 @@ func Post(c *gin.Context, ch *amqp091.Channel) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	mqbody := string(d)
 	err = ch.PublishWithContext(ctx,
 		"",     // exchange
 		q.Name, // routing key
@@ -59,7 +70,7 @@ func Post(c *gin.Context, ch *amqp091.Channel) {
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        []byte(mqbody),
+			Body:        []byte(encodedJob),
 		})
 	mq.FailOnError(err, "Failed to publish a message")
 	log.Printf(" [x] Sent %s\n", body)

@@ -71,7 +71,7 @@ func handleDnsResolution(ctx context.WorkerContext) (string, error) {
 				// lookup successful
 				msg := "a lookup successful"
 				output.Message = msg
-				output.IsOk = false
+				output.IsOk = true
 				var s []string
 				for _, resolution := range result {
 					s = append(s, resolution.Value)
