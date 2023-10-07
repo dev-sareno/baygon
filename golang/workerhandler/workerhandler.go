@@ -7,6 +7,7 @@ import (
 	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/dns"
 	"github.com/dev-sareno/ginamus/dto"
+	"github.com/dev-sareno/ginamus/mq"
 	"log"
 	"os"
 	"strings"
@@ -102,6 +103,9 @@ func handleDnsResolution(ctx context.WorkerContext) (string, error) {
 		job.Data.Outputs = append(job.Data.Outputs, jobOutput)
 
 		codec.Encode(job)
+
+		// move job to lookup cname
+		mq.PublishToLookupCname(ctx.MqChannel, job)
 		break
 	case "CNAME":
 		log.Println("TODO: implement cname lookup")

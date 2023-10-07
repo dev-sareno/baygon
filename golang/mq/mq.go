@@ -2,6 +2,8 @@ package mq
 
 import (
 	"fmt"
+	"github.com/dev-sareno/ginamus/codec"
+	"github.com/dev-sareno/ginamus/dto"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 )
@@ -37,4 +39,16 @@ func GetChannel() (*amqp.Channel, func(), bool) {
 			fmt.Println(err.Error())
 		}
 	}, true
+}
+
+func PublishToLookupA(ch *amqp.Channel, job *dto.Job) bool {
+	q := getQueue(ch, "lookup-a")
+	encodedJob := codec.Encode(job)
+	return publish(ch, q.Name, encodedJob)
+}
+
+func PublishToLookupCname(ch *amqp.Channel, job *dto.Job) bool {
+	q := getQueue(ch, "lookup-cname")
+	encodedJob := codec.Encode(job)
+	return publish(ch, q.Name, encodedJob)
 }
