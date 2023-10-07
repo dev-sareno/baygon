@@ -1,11 +1,11 @@
 package dto
 
 type ActivityOutput struct {
-	Index   int32  `json:"index"`
-	Id      string `json:"id"`
-	Data    string `json:"data"`
-	IsOk    bool   `json:"isOk"`
-	Message string `json:"message"`
+	Index   int32    `json:"index"`
+	Id      string   `json:"id"`
+	Data    []string `json:"data"`
+	IsOk    bool     `json:"isOk"`
+	Message string   `json:"message"`
 }
 
 type JobInput struct {

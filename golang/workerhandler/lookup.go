@@ -1,7 +1,7 @@
 package workerhandler
 
 import (
-	"encoding/json"
+	"github.com/dev-sareno/ginamus/codec"
 	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/dns"
 	"github.com/dev-sareno/ginamus/dto"
@@ -17,7 +17,7 @@ func Lookup(ctx *context.WorkerContext, activityId string, resolver dns.DnsResol
 	jobOutput := dto.ActivityOutput{
 		Index:   int32(len(job.Data.Outputs)),
 		Id:      activityId,
-		Data:    "",
+		Data:    []string{},
 		IsOk:    true,
 		Message: job.LastActivityMessage,
 	}
@@ -50,11 +50,8 @@ func Lookup(ctx *context.WorkerContext, activityId string, resolver dns.DnsResol
 		msg = "completed"
 	}
 
-	// encode result
-	b, _ := json.Marshal(&lookupResult)
-
 	// finalize job output
-	jobOutput.Data = string(b)
+	jobOutput.Data = lookupResult
 	jobOutput.Message = msg
 	jobOutput.IsOk = true
 	job.LastActivityMessage = msg
@@ -62,7 +59,7 @@ func Lookup(ctx *context.WorkerContext, activityId string, resolver dns.DnsResol
 
 	job.Data.Outputs = append(job.Data.Outputs, jobOutput)
 
-	//codec.Encode(job)
+	codec.Encode(job)
 
 	return ctx.Job
 }
