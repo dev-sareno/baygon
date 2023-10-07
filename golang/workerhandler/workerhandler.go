@@ -3,6 +3,8 @@ package workerhandler
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dev-sareno/ginamus/codec"
+	"github.com/dev-sareno/ginamus/context"
 	"github.com/dev-sareno/ginamus/dns"
 	"github.com/dev-sareno/ginamus/dto"
 	"log"
@@ -10,7 +12,7 @@ import (
 	"strings"
 )
 
-func HandleJob(data []byte) {
+func HandleJob(ctx context.WorkerContext, data []byte) {
 	log.Printf("Received a message: %s", data)
 
 	var job dto.Job
@@ -23,7 +25,9 @@ func HandleJob(data []byte) {
 		return
 	}
 
-	result, err := handleDnsResolution(job)
+	// assign job to context
+	ctx.Job = &job
+	result, err := handleDnsResolution(ctx)
 	if err != nil {
 		log.Printf("dns resolution failed. %s\n", err)
 		return
@@ -32,15 +36,57 @@ func HandleJob(data []byte) {
 	log.Printf("dns resolution result: %s\n", result)
 }
 
-func handleDnsResolution(job dto.Job) (string, error) {
+func handleDnsResolution(ctx context.WorkerContext) (string, error) {
 	lookupType := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
 	switch lookupType {
-	case "a":
-		// TODO: implement me
-		//resolver := dns.IpResolver{}
-		//resolver.SetValue(job.Data.Input.Domains)
+	case "A":
+		const activityId = "lookup-a"
+
+		job := ctx.Job
+		job.LastActivityId = activityId // set activity id
+
+		jobInput := job.Data.Input
+		for _, v := range jobInput.Domains {
+			output := dto.ActivityOutput{
+				Index:   int32(len(job.Data.Outputs)),
+				Id:      activityId,
+				Data:    "",
+				IsOk:    true,
+				Message: job.LastActivityMessage,
+			}
+
+			lookup := dns.IpResolver{}
+			lookup.SetValue(v)
+			result, err := lookup.Resolve()
+			if err != nil {
+				// lookup failed
+				log.Printf("a lookup failed. %s\n", err)
+				msg := fmt.Sprintf("a lookup failed. %s", err)
+				output.Message = msg
+				output.IsOk = false
+				output.Data = ""
+				job.LastActivityMessage = msg
+				job.LastActivityIsOk = true
+			} else {
+				// lookup successful
+				msg := "a lookup successful"
+				output.Message = msg
+				output.IsOk = false
+				var s []string
+				for _, resolution := range result {
+					s = append(s, resolution.Value)
+				}
+				output.Data = strings.Join(s, "")
+
+				job.LastActivityMessage = msg
+				job.LastActivityIsOk = true
+			}
+			job.Data.Outputs = append(job.Data.Outputs, output)
+			codec.Encode(job)
+		}
 		break
-	case "cname":
+	case "CNAME":
+		log.Println("TODO: implement cname lookup")
 	default:
 		return "", fmt.Errorf("invalid dns lookup type %s\n", lookupType)
 	}

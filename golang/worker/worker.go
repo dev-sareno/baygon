@@ -2,6 +2,8 @@ package worker
 
 import (
 	"fmt"
+	"github.com/dev-sareno/ginamus/context"
+	"github.com/dev-sareno/ginamus/db"
 	"github.com/dev-sareno/ginamus/mq"
 	"github.com/dev-sareno/ginamus/workerhandler"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -54,9 +56,12 @@ func Run() {
 
 	go func() {
 		for d := range msgs {
-			if err := workerhandler.HandleJob(d.Body); err != nil {
-				fmt.Printf("Job failed. %s\n", err)
+			jobCtx := context.WorkerContext{
+				Db:        db.GetDynamoDbSession(),
+				MqChannel: ch,
+				Job:       nil,
 			}
+			workerhandler.HandleJob(jobCtx, d.Body)
 		}
 	}()
 
