@@ -1,4 +1,4 @@
-module github.com/dev-sareno/ginamus/gin
+module github.com/dev-sareno/ginamus
 
 go 1.20
 

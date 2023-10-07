@@ -1,17 +1,15 @@
-package main
+package webworker
 
 import (
 	"fmt"
-	"github.com/dev-sareno/ginamus/worker-resolution/dns"
-	"github.com/dev-sareno/ginamus/worker-resolution/handler"
-	"github.com/dev-sareno/ginamus/worker-resolution/mq"
+	"github.com/dev-sareno/ginamus/mq"
+	"github.com/dev-sareno/ginamus/workerhandler"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"os"
-	"strings"
 )
 
-func main() {
+func Run() {
 	// setup RabbitMQ
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	mq.FailOnError(err, "Failed to connect to RabbitMQ")
@@ -56,7 +54,7 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			if err := handler.HandleJob(d.Body); err != nil {
+			if err := workerhandler.HandleJob(d.Body); err != nil {
 				fmt.Printf("Job failed. %s\n", err)
 			}
 		}
@@ -64,23 +62,4 @@ func main() {
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
-}
-
-func test() {
-	domain := "github.com"
-
-	ipResolver := dns.IpResolver{}
-	cnameResolver := dns.CnameResolver{Child: &ipResolver}
-	recordResolver := dns.RecordResolver{Child: &cnameResolver}
-	recordResolver.SetValue(domain)
-	result, err := recordResolver.Resolve()
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	var items []string
-	for _, item := range result {
-		items = append(items, item.Value)
-	}
-	fmt.Printf("%v\n", strings.Join(items, "\n"))
 }
