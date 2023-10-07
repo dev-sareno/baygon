@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/dev-sareno/ginamus/worker-resolution/dns"
+	"github.com/dev-sareno/ginamus/worker-resolution/handler"
 	"github.com/dev-sareno/ginamus/worker-resolution/mq"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
@@ -55,7 +56,9 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
+			if err := handler.HandleJob(d.Body); err != nil {
+				fmt.Printf("Job failed. %s\n", err)
+			}
 		}
 	}()
 
