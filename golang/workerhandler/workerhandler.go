@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dev-sareno/ginamus/context"
+	"github.com/dev-sareno/ginamus/db"
 	"github.com/dev-sareno/ginamus/dns"
 	"github.com/dev-sareno/ginamus/dto"
 	"github.com/dev-sareno/ginamus/mq"
@@ -38,6 +39,11 @@ func handleDnsResolution(ctx *context.WorkerContext) {
 		const activityId = "lookup-a"
 		resolver := dns.IpResolver{}
 		job := Lookup(ctx, activityId, &resolver)
+
+		// update database
+		if ok := db.UpdateJob(job); !ok {
+			return
+		}
 
 		// move job to lookup cname
 		mq.PublishToLookupCname(ctx.MqChannel, job)
