@@ -10,17 +10,41 @@ import (
 	"strings"
 )
 
-func HandleJob(data []byte) error {
+func HandleJob(data []byte) {
 	log.Printf("Received a message: %s", data)
+
 	var job dto.Job
 	if err := json.Unmarshal(data, &job); err != nil {
-		return fmt.Errorf("invalid job input %s", err)
+		log.Printf("invalid job input %s\n", err)
+		return
 	}
 	if job.Data.Type != 0 {
 		log.Printf("unsuported job type %d\n", job.Data.Type)
-		return nil
+		return
 	}
-	return nil
+
+	result, err := handleDnsResolution(job)
+	if err != nil {
+		log.Printf("dns resolution failed. %s\n", err)
+		return
+	}
+
+	log.Printf("dns resolution result: %s\n", result)
+}
+
+func handleDnsResolution(job dto.Job) (string, error) {
+	lookupType := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
+	switch lookupType {
+	case "a":
+		// TODO: implement me
+		//resolver := dns.IpResolver{}
+		//resolver.SetValue(job.Data.Input.Domains)
+		break
+	case "cname":
+	default:
+		return "", fmt.Errorf("invalid dns lookup type %s\n", lookupType)
+	}
+	return "", nil
 }
 
 func test() {
