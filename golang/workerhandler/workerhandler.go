@@ -46,44 +46,62 @@ func handleDnsResolution(ctx context.WorkerContext) (string, error) {
 		job.LastActivityId = activityId // set activity id
 
 		jobInput := job.Data.Input
-		for _, v := range jobInput.Domains {
-			output := dto.ActivityOutput{
-				Index:   int32(len(job.Data.Outputs)),
-				Id:      activityId,
-				Data:    "",
-				IsOk:    true,
-				Message: job.LastActivityMessage,
-			}
 
+		jobOutput := dto.ActivityOutput{
+			Index:   int32(len(job.Data.Outputs)),
+			Id:      activityId,
+			Data:    "",
+			IsOk:    true,
+			Message: job.LastActivityMessage,
+		}
+		var lookupResult []string // list of the resolved values
+		hasWarning := false
+		hasError := false
+		for _, v := range jobInput.Domains {
 			lookup := dns.IpResolver{}
 			lookup.SetValue(v)
 			result, err := lookup.Resolve()
 			if err != nil {
 				// lookup failed
 				log.Printf("a lookup failed. %s\n", err)
-				msg := fmt.Sprintf("a lookup failed. %s", err)
-				output.Message = msg
-				output.IsOk = false
-				output.Data = ""
-				job.LastActivityMessage = msg
-				job.LastActivityIsOk = true
+				lookupResult = append(lookupResult, "") // append empty
+				hasError = true
 			} else {
 				// lookup successful
-				msg := "a lookup successful"
-				output.Message = msg
-				output.IsOk = true
-				var s []string
-				for _, resolution := range result {
-					s = append(s, resolution.Value)
+				// ipv4 lookup is expected length of one since it  doesn't have a child
+				if len(result) != 1 {
+					log.Println("WARNING: ipresolver is expected to return a length of 1")
+					// this is invalid, consider as failed
+					lookupResult = append(lookupResult, "") // append empty
+					hasWarning = true
+					continue
 				}
-				output.Data = strings.Join(s, "")
-
-				job.LastActivityMessage = msg
-				job.LastActivityIsOk = true
+				lookupResult = append(lookupResult, result[0].Value)
 			}
-			job.Data.Outputs = append(job.Data.Outputs, output)
-			codec.Encode(job)
 		}
+
+		var msg string
+		if hasWarning {
+			msg = "completed with warning"
+		} else if hasError {
+			msg = "completed with errors"
+		} else {
+			msg = "completed"
+		}
+
+		// encode result
+		b, _ := json.Marshal(&lookupResult)
+
+		// finalize job output
+		jobOutput.Data = string(b)
+		jobOutput.Message = msg
+		jobOutput.IsOk = true
+		job.LastActivityMessage = msg
+		job.LastActivityIsOk = true
+
+		job.Data.Outputs = append(job.Data.Outputs, jobOutput)
+
+		codec.Encode(job)
 		break
 	case "CNAME":
 		log.Println("TODO: implement cname lookup")
