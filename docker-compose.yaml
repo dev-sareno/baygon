@@ -1,7 +1,62 @@
 version: "3"
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     ports:
       - "8080:15672"
       - "5672:5672"
+    networks:
+      - ginamus
+    healthcheck:
+      test: [ "CMD", "wget", "-S", "--spider", "http://localhost:15672" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  worker-cname:
+    build: ./golang
+    command:
+      - worker
+    environment:
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+      WORKER_DNS_LOOKUP_TYPE: CNAME
+      RMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    networks:
+      - ginamus
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  worker-a:
+    build: ./golang
+    command:
+      - worker
+    environment:
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+      WORKER_DNS_LOOKUP_TYPE: A
+      RMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    networks:
+      - ginamus
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  web:
+    build: ./golang
+    command:
+      - web
+    environment:
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+      RMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "8001:8000"
+    networks:
+      - ginamus
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+networks:
+  ginamus:
