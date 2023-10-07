@@ -1,15 +1,15 @@
 package db
 
 import (
-	"errors"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/dev-sareno/ginamus/dto"
+	"log"
+	"net/http"
 )
 
-func GetJob(jobId string) (*dto.Job, error) {
+func GetJob(jobId string) (*dto.Job, int) {
 	svc := GetDynamoDbSession()
 
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
@@ -21,18 +21,19 @@ func GetJob(jobId string) (*dto.Job, error) {
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("got error calling GetItem: %s", err)
+		log.Printf("got error calling GetItem: %s", err)
+		return nil, http.StatusInternalServerError
 	}
 
 	if result.Item == nil {
-		msg := "Could not find '" + jobId + "'"
-		return nil, errors.New(msg)
+		return nil, http.StatusNotFound
 	}
 
 	var item dto.Job
 	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal Record, %v", err)
+		log.Printf("failed to unmarshal Record, %v", err)
+		return nil, http.StatusInternalServerError
 	}
-	return &item, nil
+	return &item, http.StatusOK
 }

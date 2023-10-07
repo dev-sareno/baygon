@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"log"
 	"net/http"
 )
 
@@ -45,6 +44,18 @@ func Post(c *gin.Context, ch *amqp.Channel) {
 }
 
 func GetJobById(c *gin.Context, ch *amqp.Channel) {
+	type Item struct {
+		Domain string `json:"domain"`
+		A      string `json:"a"`
+		Cname  string `json:"cname"`
+	}
+	type Response struct {
+		JobId     string  `json:"jobId"`
+		Completed bool    `json:"completed"`
+		Progress  float64 `json:"progress"`
+		Data      []Item  `json:"data"`
+	}
+
 	jobId := c.Param("jobId")
 
 	// validate uuid
@@ -53,12 +64,34 @@ func GetJobById(c *gin.Context, ch *amqp.Channel) {
 		return
 	}
 
-	item, err := db.GetJob(jobId)
-	if err != nil {
-		c.String(http.StatusInternalServerError, fmt.Sprintf("Server error. %s", err))
+	job, statusCode := db.GetJob(jobId)
+	if statusCode != http.StatusOK {
+		c.String(statusCode, fmt.Sprint("Server error."))
 		return
 	}
-	log.Printf("%v\n", item)
 
-	c.JSON(http.StatusOK, gin.H{})
+	response := Response{JobId: jobId}
+
+	// simplify response
+	response.Progress = (float64(len(job.Data.Outputs)) / 2) * 100 // divide two because we only have A and CNAME resolution
+	response.Completed = response.Progress >= 100
+
+	const CNAME = 0
+	const A = 1
+	response.Data = []Item{}
+	for i, domain := range job.Data.Input.Domains {
+		v := Item{Domain: domain}
+		jo := job.Data.Outputs
+		if len(jo) > 0 {
+			// cname is available
+			v.Cname = jo[CNAME].Data[i]
+		}
+		if len(jo) > 1 {
+			// a is available
+			v.A = jo[A].Data[i]
+		}
+		response.Data = append(response.Data, v)
+	}
+
+	c.JSON(http.StatusOK, response)
 }

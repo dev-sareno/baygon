@@ -40,6 +40,6 @@ func publish(ch *amqp.Channel, queueName string, data string) bool {
 		log.Println("failed to publish a message")
 		return false
 	}
-	log.Printf(" [x] Sent %s\n", data)
+	log.Printf(" [x] data has been sent to the queue %s\n", queueName)
 	return true
 }
