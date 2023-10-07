@@ -38,12 +38,12 @@ func UpdateJob(job *dto.Job) bool {
 		ReturnValues:              aws.String("UPDATED_NEW"),
 	}
 
-	o, err := svc.UpdateItem(input)
+	_, err = svc.UpdateItem(input)
 	if err != nil {
 		log.Printf("got error calling UpdateItem: %s\n", err)
 		return false
 	}
 
-	log.Printf("successfully updated. output: %v\n", o)
+	log.Println("successfully updated.")
 	return true
 }
