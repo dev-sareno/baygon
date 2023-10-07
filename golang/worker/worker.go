@@ -70,7 +70,7 @@ func Run() {
 				MqChannel: ch,
 				Job:       nil,
 			}
-			workerhandler.HandleJob(jobCtx, d.Body)
+			workerhandler.HandleJob(&jobCtx, d.Body)
 		}
 	}()
 
