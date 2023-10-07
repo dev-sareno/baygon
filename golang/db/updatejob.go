@@ -27,9 +27,6 @@ func UpdateJob(job *dto.Job) bool {
 			"id": {
 				S: aws.String(job.Id),
 			},
-			"createdAt": {
-				S: aws.String(job.CreatedAt),
-			},
 		},
 		TableName:                 aws.String(TableName),
 		ExpressionAttributeNames:  expr.Names(),

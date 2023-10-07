@@ -34,19 +34,11 @@ func PrepareTable() bool {
 				AttributeName: aws.String("id"),
 				AttributeType: aws.String("S"),
 			},
-			{
-				AttributeName: aws.String("createdAt"),
-				AttributeType: aws.String("S"),
-			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
 				AttributeName: aws.String("id"),
 				KeyType:       aws.String("HASH"),
-			},
-			{
-				AttributeName: aws.String("createdAt"),
-				KeyType:       aws.String("RANGE"),
 			},
 		},
 		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),

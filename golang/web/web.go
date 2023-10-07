@@ -37,8 +37,8 @@ func Run() {
 		webhandler.Post(c, ch)
 	})
 
-	r.GET("/", func(c *gin.Context) {
-		webhandler.Get(c, ch)
+	r.GET("/:jobId", func(c *gin.Context) {
+		webhandler.GetJobById(c, ch)
 	})
 
 	if err := r.Run(":8000"); err != nil {

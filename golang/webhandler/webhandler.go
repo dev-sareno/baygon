@@ -6,7 +6,9 @@ import (
 	"github.com/dev-sareno/ginamus/db"
 	"github.com/dev-sareno/ginamus/mq"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"log"
 	"net/http"
 )
 
@@ -42,6 +44,21 @@ func Post(c *gin.Context, ch *amqp.Channel) {
 	})
 }
 
-func Get(c *gin.Context, ch *amqp.Channel) {
+func GetJobById(c *gin.Context, ch *amqp.Channel) {
+	jobId := c.Param("jobId")
 
+	// validate uuid
+	if _, err := uuid.Parse(jobId); err != nil {
+		c.String(http.StatusBadRequest, fmt.Sprintf("invalid job id %s", jobId))
+		return
+	}
+
+	item, err := db.GetJob(jobId)
+	if err != nil {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Server error. %s", err))
+		return
+	}
+	log.Printf("%v\n", item)
+
+	c.JSON(http.StatusOK, gin.H{})
 }
