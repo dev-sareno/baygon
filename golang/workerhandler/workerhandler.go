@@ -27,24 +27,21 @@ func HandleJob(ctx *context.WorkerContext, data []byte) {
 	ctx.Job = &job // assign job to context
 
 	// handle resolution
-	if err := handleDnsResolution(ctx); err != nil {
-		log.Printf("dns resolution failed. %s\n", err)
-		return
-	}
+	handleDnsResolution(ctx)
 }
 
-func handleDnsResolution(ctx *context.WorkerContext) error {
+func handleDnsResolution(ctx *context.WorkerContext) {
 	lookupType := os.Getenv("WORKER_DNS_LOOKUP_TYPE")
 	switch lookupType {
 	case "A":
 		lookupA(ctx)
-		return nil
+		break
 	case "CNAME":
-		log.Println("TODO: implement cname lookup")
+		lookupCname(ctx)
+		break
 	default:
-		return fmt.Errorf("invalid dns lookup type %s\n", lookupType)
+		log.Printf("invalid dns lookup type %s\n", lookupType)
 	}
-	return nil
 }
 
 func test() {
