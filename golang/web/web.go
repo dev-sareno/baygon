@@ -5,10 +5,12 @@ import (
 	"github.com/dev-sareno/ginamus/db"
 	"github.com/dev-sareno/ginamus/mq"
 	"github.com/dev-sareno/ginamus/webhandler"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func Run() {
@@ -26,6 +28,15 @@ func Run() {
 
 	// init Gin web server
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"https://ginam.us", "http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
