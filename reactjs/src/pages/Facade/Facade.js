@@ -14,8 +14,8 @@ const Parent = styled.div`
 
 const Facade = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(44);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [mermaidChart, setMermaidChart] = useState("");
   const [domains, setDomains] = useState("");
   const [jobId, setJobId] = useState("");
@@ -25,11 +25,15 @@ const Facade = () => {
       if (jobId) {
         (async () => {
           const r = await api.get(`/${jobId}`);
+          setProgress(r.progress);
           if (r.completed) {
             setJobId(""); // stop checker
+            setIsLoading(false);
+            setIsLoaded(true);
           }
           const m = jobUtil.dataToMermaidGraphDefinition(r);
           console.log(m);
+          setMermaidChart(m);
         })();
       }
     }, 5000);
@@ -44,26 +48,18 @@ const Facade = () => {
     }
     setIsLoading(true);
 
+    setIsLoaded(false);
+
     // parse domains
     const parts = domains.trim()
       .split("\n")
       .filter(v => v.trim() !== "");
-    console.log({parts})
 
     const {jobId: rJobId} = await api.post("/", {
       domains: parts,
     });
     console.log({rJobId});
     setJobId(rJobId);
-
-    //
-    // const graphDefinition = `
-    // graph LR
-    //   A --- B
-    //   B-->C[fa:fa-ban forbidden]
-    //   B-->D(fa:fa-spinner);
-    // `;
-    // setMermaidChart(graphDefinition);
   };
 
   const domainsChangeHandler = (e) => {
@@ -85,9 +81,12 @@ const Facade = () => {
 
       <br/>
       <br/>
-      <Progress progress
-                size='small'
-                percent={progress}>Building diagram 🔨 ...</Progress>
+      {isLoading && (
+        <Progress progress
+                  success={isLoaded}
+                  size='small'
+                  percent={progress}>Building diagram 🔨 ...</Progress>
+      )}
 
       <Mermaid chart={mermaidChart} />
 
