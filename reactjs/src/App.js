@@ -1,12 +1,12 @@
-import styled from "styled-components";
-
-const Parent = styled.div``;
+import Facade from "./pages/Facade/Facade";
+import Header from "./components/Header/Header";
 
 function App() {
   return (
-      <Parent>
-        Hola!
-      </Parent>
+    <>
+      <Header />
+      <Facade />
+    </>
   );
 }
 
