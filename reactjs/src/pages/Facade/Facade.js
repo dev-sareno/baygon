@@ -47,8 +47,8 @@ const Facade = () => {
       return;
     }
     setIsLoading(true);
-
     setIsLoaded(false);
+    setProgress(0);
 
     // parse domains
     const parts = domains.trim()
