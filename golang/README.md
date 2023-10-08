@@ -5,7 +5,7 @@ This contains two projects, Web and Worker.
 ```shell
 export AWS_ACCESS_KEY_ID=
 export AWS_SECRET_ACCESS_KEY=
-export AWS_DEFAULT_REGION=
+export $AWS_REGION=
 export WORKER_DNS_LOOKUP_TYPE=A
 export RMQ_URL=amqp://guest:guest@localhost:5672/
 ```
