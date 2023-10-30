@@ -6,9 +6,8 @@ pipeline {
             steps {
                 echo 'Building..'
                 sh 'cat /etc/os-release'
-                docker.image('alpine').inside {
-                    sh 'cat /etc/os-release'
-                }
+                def customImage = docker.build("devsareno/testimage:latest", "-f ./golang")
+                customImage.push()
             }
         }
         stage('Test') {
