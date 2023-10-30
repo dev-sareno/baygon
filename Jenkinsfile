@@ -7,6 +7,7 @@ pipeline {
                 echo 'Building..'
                 sh 'cat /etc/os-release'
                 script {
+                    // TODO: Fix "docker not found"
                     def customImage = docker.build("devsareno/testimage:latest", "-f ./golang")
                     customImage.push()
                 }
