@@ -6,8 +6,9 @@ pipeline {
             steps {
                 echo 'Building..'
                 sh 'cat /etc/os-release'
-                sh 'which docker'
-                sh 'docker --version'
+                docker.image('alpine').inside {
+                    sh 'cat /etc/os-release'
+                }
             }
         }
         stage('Test') {
