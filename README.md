@@ -1,5 +1,4 @@
-# ginamus
-DevOps Utility Tool for IP and DNS Mapping
+# DevOps Utility Tool for IP and DNS Mapping
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -19,6 +18,18 @@ This open-source project aims to simplify the process of resolving and visualizi
 - **Geolocation Integration:** Enrich the visualization by mapping IP Addresses to physical locations, enhancing geographic data representation.
 - **Real-time Monitoring:** Continuous tracking of changes in IP-DNS mappings with alerts or notifications for alterations.
 
+## Technology Stack
+
+### Backend
+
+- **Language:** Golang
+- **Deployment:** Kubernetes
+- **Database:** AWS DynamoDB
+
+### Frontend
+
+- **Framework:** ReactJS
+
 ## Current Features
 
 The tool currently offers the following functionality:
@@ -35,6 +46,15 @@ The roadmap for future enhancements includes:
 - **Interactive Graphs:** Adding click functionality in Mermaid.js graphs for detailed information on nodes (IP or domain).
 - **Historical Data Analysis:** Storing and analyzing historical mapping data to identify trends and anomalies over time.
 
+## Getting Started
+
+To get started with the project:
+```shell
+$ git clone https://github.com/dev-sareno/ginamus.git
+$ cd ginamus
+$ docker compose up -d
+```
+
 ## Usage
 
 1. **Provide a list of domains/sub-domains** through the provided UI.
@@ -42,7 +62,16 @@ The roadmap for future enhancements includes:
 
 ## Contributing
 
-Contributions are welcome! Feel free to fork the repository and submit pull requests.
+We welcome contributions from the community! To contribute to the project:
+
+- Read our [Code of Conduct](CODE_OF_CONDUCT.md).
+- Review our [Contributing Guidelines](CONTRIBUTING.md).
+- Fork the repository, make your changes, and submit a pull request.
+- Ensure your code follows the project's coding conventions.
+
+## Code of Conduct
+
+This project follows our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a respectful and inclusive environment for everyone.
 
 ## License
 
@@ -51,4 +80,3 @@ This project is licensed under the [MIT License](LICENSE).
 ## Contact
 
 For any queries or support, feel free to contact the project maintainer.
-
