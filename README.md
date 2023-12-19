@@ -77,6 +77,20 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a respe
 
 This project is licensed under the [MIT License](LICENSE).
 
+## Acknowledgments
+
+This project acknowledges the generous support of JetBrains through their Open Source Support (OSS) program, providing a free license for their powerful GoLand IDE.
+
+[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/GoLand.png" alt="GoLand logo">](https://www.jetbrains.com/go/)
+
+### JetBrains Open Source Support
+
+This project utilizes GoLand, an intelligent IDE for Go development, made possible by JetBrains' commitment to supporting open-source initiatives. The GoLand logo used above is owned by JetBrains.
+
+We extend our sincere gratitude to JetBrains for their continuous support of the open-source community.
+
+[JetBrains Open Source Support Program](https://www.jetbrains.com/community/opensource/)
+
 ## Contact
 
 For any queries or support, feel free to contact the project maintainer.
